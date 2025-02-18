@@ -1,0 +1,12 @@
+[
+    {
+        "name": "Trade Items",
+        "parser": "tradeItems",
+        "pageTitle": "Module:TradeItems/data"
+    },
+    {
+        "name": "Consumable Items",
+        "parser": "consumableItems",
+        "pageTitle": "Module:ConsumableItems/data"
+    }
+]

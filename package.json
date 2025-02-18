@@ -1,0 +1,43 @@
+{
+  "name": "atlyss-wiki",
+  "productName": "atlyss-wiki",
+  "version": "0.1.0",
+  "description": "A port from Atlyss-Data-Parcer-Wiki, now with GUI",
+  "main": ".webpack/main",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "echo \"No linting configured\""
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.6.1",
+    "@electron-forge/maker-deb": "^7.6.1",
+    "@electron-forge/maker-rpm": "^7.6.1",
+    "@electron-forge/maker-squirrel": "^7.6.1",
+    "@electron-forge/maker-zip": "^7.6.1",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.6.1",
+    "@electron-forge/plugin-fuses": "^7.6.1",
+    "@electron-forge/plugin-webpack": "^7.6.1",
+    "@electron/fuses": "^1.8.0",
+    "@vercel/webpack-asset-relocator-loader": "^1.7.3",
+    "css-loader": "^6.11.0",
+    "electron": "34.1.1",
+    "node-loader": "^2.1.0",
+    "style-loader": "^3.3.4"
+  },
+  "keywords": [],
+  "author": {
+    "name": "LiveGobe",
+    "email": "pax01012000@gmail.com"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1",
+    "jquery": "^3.7.1",
+    "js-yaml": "^4.1.0",
+    "nodemw": "^0.24.0",
+    "yaml": "^2.7.0"
+  }
+}

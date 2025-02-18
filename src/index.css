@@ -1,0 +1,183 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  min-width: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  margin: auto;
+  color: #FFF;
+  background-color: #333;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+a[href] {
+  color: #0077cc;
+  text-decoration: none;
+}
+
+#app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+header {
+  text-align: center;
+  border-bottom: 1px solid #FFF;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+footer {
+  text-align: center;
+  border-top: 1px solid #FFF;
+}
+
+.pre-message {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+div.pre-message {
+  flex-direction: column;
+  align-items: center;
+}
+
+main {
+  height: 100%;
+}
+
+#main-menu {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+#menu-wrapper {
+  height: 100%;
+  padding: 10px;
+}
+
+#tabs {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #FFF;
+}
+
+.tab {
+  padding: 0 0.5rem;
+  border-radius: 5px 5px 0 0;
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgb(0, 87, 150);
+    border-bottom: 2px solid #FFF;
+    transition: background-color 0.1s, border-bottom 0.1s;
+  }
+}
+
+.tab.active {
+  background-color: #0077cc;
+  border-bottom: 2px solid #FFF;
+
+  &:hover {
+    background-color: rgb(0, 87, 150);
+  }
+}
+
+#version-path-display {
+  font-size: 0.7rem;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  display: flex;
+  flex-direction: row;
+  border-top: 1px solid #FFF;
+  padding-top: 1rem;
+  overflow-y: hidden;
+  overflow-x: auto;
+
+  & > #game-data-version {
+    margin-right: 10px;
+    margin-left: 10px;
+  }
+
+  & > #game-data-path {
+    &:hover {
+      cursor: pointer;
+      background-color: #0077cc;
+    }
+  }
+}
+
+#menu-logs, #menu-content {
+  height: 100%;
+}
+
+#menu-parsing {
+  display: flex;
+  justify-content: space-between;
+}
+
+#parse-data-menu {
+  width: 50%;
+}
+
+#scripts-selection, #uploads-selection {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.5rem;
+  border: 1px solid #FFF;
+  border-radius: 5px;
+  padding: 0.5rem;
+}
+
+button.script-select, button.upload-select {
+  border: none;
+  border-radius: 5px;
+  background-color: #b30000;
+  color: #fff;
+
+  &:disabled {
+    background-color: #000000;
+
+    &:hover {
+      background-color: #000000;
+    }
+  }
+
+  &:hover {
+    background-color: #ff0000;
+  }
+
+  &.active {
+    background-color: #00cc1b;
+
+    &:hover {
+      background-color: #00ff2e;
+    }
+  }
+}
+
+#logs {
+  width: 100%;
+  height: 90%;
+  resize: none;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #1f4e70;
+  color: #fff;
+}

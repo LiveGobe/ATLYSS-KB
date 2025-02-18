@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>Atlyss Data Uploader for atlyss.wiki.gg</title>
+</head>
+
+<body>
+  <div id="app">
+    <header>
+      <h1>Atlyss data upload to <a href="https://atlyss.wiki.gg" target="_blank">atlyss.wiki.gg</a></h1>
+    </header>
+    <main>
+      <div class="pre-message">
+        Checking for app version...
+      </div>
+      <div id="main-menu" style="display: none;">
+        <div id="tabs">
+          <div id="tab-overview" data-tab="overview" class="tab active">Overview</div>
+          <div id="tab-parsing" data-tab="parsing" class="tab">Parsing</div>
+          <div id="tab-uploads" data-tab="uploads" class="tab">Uploads</div>
+          <div id="tab-logs" data-tab="logs" class="tab">Logs</div>
+          <div id="tab-settings" data-tab="settings" class="tab">Settings</div>
+        </div>
+        <div id="menu-wrapper">
+          <div id="menu-content">
+            <div id="menu-overview">
+              <div id="status">
+                Status: <span>IDLE</span>
+              </div>
+              <div id="state">
+                State: <span>UNPARSED</span>
+              </div>
+            </div>
+            <div id="menu-parsing" style="display: none;">
+              <div id="parse-raw-menu">
+                <div id="files-count">
+                  Raw files parsed: <span>_/_</span>
+                </div>
+                <div id="parse-controls">
+                  <button type="button" id="parse-raw">Parse Raw Data</button>
+                </div>
+              </div>
+              <div id="parse-data-menu" style="display: none;">
+                <div id="scripts-selection"></div>
+                <button type="button" id="parse-data">Parse Selected Data</button>
+              </div>
+            </div>
+            <div id="menu-uploads" style="display: none;">
+              <div id="uploads">
+                <div id="uploads-selection"></div>
+                <button type="button" id="upload-data">Upload Selected Data</button>
+              </div>
+            </div>
+            <div id="menu-logs" style="display: none;">
+              <textarea name="logs" id="logs" readonly></textarea>
+              <button type="button" id="clear-logs">Clear Logs</button>
+            </div>
+            <div id="menu-settings" style="display: none;">
+              <div id="settings">
+                <div id="settings-username">
+                  <label for="username">Username:</label>
+                  <input type="text" id="username" />
+                </div>
+                <div id="settings-password">
+                  <label for="password">Password:</label>
+                  <input type="password" id="password" />
+                </div>
+                <div id="export-json">
+                  <label for="export-json-checkbox">Export JSON:</label>
+                  <input type="checkbox" id="export-json-checkbox" />
+                </div>
+                <div id="settings-save">
+                  <button type="button" id="save-settings">Save Settings</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="version-path-display">
+          <div id="game-data-version"></div>
+          <div id="game-data-path"></div>
+        </div>
+      </div>
+    </main>
+    <footer>
+      <p>
+        <span id="version">Version: _</span> | 2025 &copy; LiveGobe | <a href="http://github.com/LiveGobe"
+          target="_blank">GitHub Link</a>
+      </p>
+    </footer>
+  </div>
+</body>
+
+</html>
