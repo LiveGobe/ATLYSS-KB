@@ -65,6 +65,8 @@ $.getJSON(`https://raw.githubusercontent.com/${githubAddress}/master/package.jso
             if (p.length === 0) return alert("Please select at least one script to parse.");
 
             $(e.target).prop("disabled", true);
+            $("#upload-data").prop("disabled", true); // Disable upload button
+            $("#clear-cache").prop("disabled", true); // Disable clear cache button
 
             api.parseData(p);
         });
@@ -123,14 +125,21 @@ $.getJSON(`https://raw.githubusercontent.com/${githubAddress}/master/package.jso
 
         api.onStateChange(async (state) => {
             $("#state span").text(state);
-            if (state == "PARSING" || state == "UPLOADING") $("#status span").text("BUSY");
-            else if (state == "RAW DATA PARSED") {
+            if (state == "PARSING" || state == "UPLOADING") {
+                $("#status span").text("BUSY");
+                $("#upload-data").prop("disabled", true); // Disable upload button
+                $("#clear-cache").prop("disabled", true); // Disable clear cache button
+            } else if (state == "RAW DATA PARSED") {
                 $("#status span").text("IDLE");
                 $("#parse-raw").prop("disabled", false).text("Parse Raw Data Again");
                 $("#parse-data-menu").show();
+                $("#upload-data").prop("disabled", false); // Enable upload button
+                $("#clear-cache").prop("disabled", false); // Enable clear cache button
             } else if (state == "DATA PARSED") {
                 $("#status span").text("IDLE");
                 $("#parse-data").prop("disabled", false);
+                $("#upload-data").prop("disabled", false); // Enable upload button
+                $("#clear-cache").prop("disabled", false); // Enable clear cache button
                 // Update available uploads
                 const availableUploads = await api.getAvailableUploads();
                 $(".upload-select").each((i, el) => {
@@ -142,6 +151,7 @@ $.getJSON(`https://raw.githubusercontent.com/${githubAddress}/master/package.jso
             } else if (state == "DATA UPLOADED") {
                 $("#status span").text("IDLE");
                 $("#upload-data").prop("disabled", false);
+                $("#clear-cache").prop("disabled", false); // Enable clear cache button
             }
         });
 
