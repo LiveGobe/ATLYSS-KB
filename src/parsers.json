@@ -8,5 +8,10 @@
         "name": "Consumable Items",
         "parser": "consumableItems",
         "pageTitle": "Module:ConsumableItems/data"
+    },
+    {
+        "name": "Equipment Items",
+        "parser": "equipmentItems",
+        "pageTitle": "Module:EquipmentItems/data"
     }
 ]

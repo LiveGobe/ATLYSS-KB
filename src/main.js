@@ -5,7 +5,6 @@ import * as fs from 'fs';
 import * as YAML from 'yaml';
 import { Worker } from 'worker_threads';
 import mw from './bin/nodemw/bot';
-import './compareVersions';
 import parsers from "./parsers.json";
 import compareVersions from './compareVersions';
 
