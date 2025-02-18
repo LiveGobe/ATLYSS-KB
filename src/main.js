@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as YAML from 'yaml';
 import { Worker } from 'worker_threads';
-import mw from 'nodemw';
+import mw from './bin/nodemw/bot';
 import './compareVersions';
 import parsers from "./parsers.json";
 import compareVersions from './compareVersions';
@@ -330,10 +330,12 @@ const createWindow = () => {
         const client = new mw({
           protocol: "https",
           server: "atlyss.wiki.gg",
-          path: "/",
+          path: "",
           username: config.username,
-          password: config.password
+          password: config.password,
+          debug: app.isPackaged ? false : true
         });
+
 
         const getArticle = (title) => {
           return new Promise((resolve, reject) => {
@@ -373,6 +375,7 @@ const createWindow = () => {
           await editArticle(`${upload.pageTitle}/version.json`, JSON.stringify({ version: versionName }, null, 2), `(Automated Update Using ATLYSS-KB) Bumped module ${upload.parser} to version ${versionName}`);
 
           const articleData = await getArticle(upload.pageTitle);
+          
           const filePath = path.join(projectPath, 'data', 'parsed', upload.parser, `${upload.parser}.lua`);
           const newContent = fs.readFileSync(filePath, "utf8");
 
@@ -390,12 +393,10 @@ const createWindow = () => {
       }
     }
 
-    const availableParsers = p.map(parser => {
-      return {
-        parser: parser.parser,
-        pageTitle: parser.pageTitle
-      };
-    }).filter(parser => fs.existsSync(path.join(projectPath, 'data', 'parsed', parser.parser, `${parser.parser}.lua`)));
+    const availableParsers = p.filter(parser => {
+      const filePath = path.join(projectPath, 'data', 'parsed', parser.parser, `${parser.parser}.lua`);
+      return fs.existsSync(filePath);
+    });
 
     for (const upload of availableParsers) {
       try {
