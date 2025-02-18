@@ -210,6 +210,7 @@ const createWindow = () => {
       setConfig({ gameSourceFolder: result.filePaths[0], exportJSON: false, raw: false, parsed: false });
       fs.rmSync(path.join(projectPath, 'data', 'output'), { recursive: true, force: true });
       fs.rmSync(path.join(projectPath, 'data', 'parsed'), { recursive: true, force: true });
+      fs.rmSync(path.join(projectPath, 'data', 'cache.json'), { force: true });
       fs.writeFileSync(path.join(projectPath, 'data', 'gameVersion.txt'), gameVersion, { encoding: 'utf-8' });
 
       if (defaultPath != undefined && defaultPath !== result.filePaths[0]) {
@@ -411,6 +412,20 @@ const createWindow = () => {
     }
 
     return { success: true };
+  });
+
+  ipcMain.handle("clearCache", async () => {
+    const projectPath = getProjectPath();
+    const cacheFilePath = path.join(projectPath, 'data', 'cache.json');
+
+    if (fs.existsSync(cacheFilePath)) {
+      fs.rmSync(cacheFilePath, { force: true });
+      mainWindow.webContents.send("logMessage", "Cache cleared successfully.");
+      return { success: true };
+    } else {
+      mainWindow.webContents.send("logMessage", "No cache file found.");
+      return { success: false, error: "No cache file found." };
+    }
   });
 
   // Open the DevTools.

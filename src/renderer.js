@@ -44,6 +44,11 @@ $.getJSON(`https://raw.githubusercontent.com/${githubAddress}/master/package.jso
             const tab = $(this).data("tab");
             $(this).addClass("active");
             $(`#menu-${tab}`).show().siblings().hide();
+
+            if (tab == "logs") {
+                const $textarea = $("#logs");
+                $textarea.scrollTop($textarea[0].scrollHeight - $textarea.height());
+            }
         });
 
         $("#parse-raw").on("click", (e) => {
@@ -104,6 +109,12 @@ $.getJSON(`https://raw.githubusercontent.com/${githubAddress}/master/package.jso
             });
 
             alert("Settings saved.");
+        });
+
+        $("#clear-cache").on("click", async (e) => {
+            e.preventDefault();
+            await api.clearCache();
+            alert("Cache cleared.");
         });
 
         api.onRecieveFilesCount((filesCount, totalFiles) => {
