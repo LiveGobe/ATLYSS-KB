@@ -34,7 +34,7 @@ const createWindow = () => {
     });
 
     mainWindow.webContents.on('before-input-event', (event, input) => {
-      if (input.key === 'F5' || (input.control && input.key === 'R')) {
+      if (input.key === 'F5' || (input.control && (input.key === 'R' || input.key === 'r'))) {
         event.preventDefault(); // Lock page reload in production
       }
     });
