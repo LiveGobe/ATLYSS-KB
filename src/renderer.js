@@ -157,7 +157,12 @@ $.getJSON(`https://raw.githubusercontent.com/${githubAddress}/master/package.jso
 
         api.onLogMessage((message) => {
             const $textarea = $("#logs");
-            $textarea.text($textarea.text() + message + "\n").scrollTop($textarea[0].scrollHeight - $textarea.height());
+            const scrollThreshold = 50; // Set a threshold for scrolling
+            const isAtBottom = $textarea[0].scrollHeight - $textarea.scrollTop() - $textarea.height() <= scrollThreshold;
+            $textarea.text($textarea.text() + message + "\n");
+            if (isAtBottom) {
+                $textarea.scrollTop($textarea[0].scrollHeight - $textarea.height());
+            }
         });
 
         $("#game-data-path").on("click", async (e) => {
