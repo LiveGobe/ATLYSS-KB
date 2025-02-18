@@ -22,10 +22,23 @@ const createWindow = () => {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
       nodeIntegration: true,
     },
+    autoHideMenuBar: app.isPackaged, // Make menu bar invisible in production
   });
 
   // load the index.html of the app.
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+
+  if (app.isPackaged) {
+    mainWindow.webContents.on('devtools-opened', () => {
+      mainWindow.webContents.closeDevTools(); // Lock devtools in production
+    });
+
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.key === 'F5' || (input.control && input.key === 'R')) {
+        event.preventDefault(); // Lock page reload in production
+      }
+    });
+  }
 
   // prevent external links from opening in the app
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
