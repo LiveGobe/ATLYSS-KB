@@ -7,6 +7,7 @@ import { Worker } from 'worker_threads';
 import mw from 'nodemw';
 import './compareVersions';
 import parsers from "./parsers.json";
+import compareVersions from './compareVersions';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -334,26 +335,56 @@ const createWindow = () => {
           password: config.password
         });
 
-        return new Promise((resolve, reject) => {
-          client.logIn((err) => {
-            if (err) return reject({ error: err.message });
-
-            client.getArticle(upload.pageTitle, (err, data) => {
-              if (err) return reject({ error: err.message });
-
-              const filePath = path.join(projectPath, 'data', 'parsed', upload.parser, `${upload.parser}.lua`);
-              const newContent = fs.readFileSync(filePath, "utf8");
-
-              if (data && data.trim() === newContent.trim()) return resolve({ error: "No changes detected. Skipping edit." });
-
-              client.edit(upload.pageTitle, newContent, `(Automated Update Using ATLYSS-KB) Updated data for version ${versionName}`, (err) => {
-                if (err) return reject({ error: err.message });
-
-                resolve({ success: true });
-              });
+        const getArticle = (title) => {
+          return new Promise((resolve, reject) => {
+            client.getArticle(title, (err, data) => {
+              if (err && err.code !== 'missingtitle') return reject(err);
+              resolve(data);
             });
           });
-        });
+        };
+
+        const editArticle = (title, content, summary) => {
+          return new Promise((resolve, reject) => {
+            client.edit(title, content, summary, (err) => {
+              if (err) return reject(err);
+              resolve();
+            });
+          });
+        };
+
+        const logIn = () => {
+          return new Promise((resolve, reject) => {
+            client.logIn((err) => {
+              if (err) return reject(err);
+              resolve();
+            });
+          });
+        };
+
+        try {
+          const data = await getArticle(`${upload.pageTitle}/version.json`);
+          const remoteVersionData = data ? JSON.parse(data) : {};
+          if (remoteVersionData.version && compareVersions(remoteVersionData.version, versionName) !== -1) {
+            return { error: "Remote version is newer. Skipping edit." };
+          }
+          await logIn();
+
+          await editArticle(`${upload.pageTitle}/version.json`, JSON.stringify({ version: versionName }, null, 2), `(Automated Update Using ATLYSS-KB) Bumped module ${upload.parser} to version ${versionName}`);
+
+          const articleData = await getArticle(upload.pageTitle);
+          const filePath = path.join(projectPath, 'data', 'parsed', upload.parser, `${upload.parser}.lua`);
+          const newContent = fs.readFileSync(filePath, "utf8");
+
+          if (articleData && articleData.trim() === newContent.trim()) {
+            return { error: "No changes detected. Skipping edit." };
+          }
+
+          await editArticle(upload.pageTitle, newContent, `(Automated Update Using ATLYSS-KB) Updated data for version ${versionName}`);
+          return { success: true };
+        } catch (error) {
+          return { error: error.message };
+        }
       } catch (error) {
         return { error: error.message };
       }
