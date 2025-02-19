@@ -13,5 +13,10 @@
         "name": "Equipment Items",
         "parser": "equipmentItems",
         "pageTitle": "Module:EquipmentItems/data"
+    },
+    {
+        "name": "Classes",
+        "parser": "classes",
+        "pageTitle": "Module:Classes/data"
     }
 ]
