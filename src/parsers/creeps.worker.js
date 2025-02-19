@@ -1,4 +1,4 @@
-const fs = require("node:fs");
+const fs = require("node:fs").promises;
 const path = require("node:path");
 const { parentPort, workerData } = require("worker_threads");
 const findAssetById = require("../bin/findAssetById");
@@ -10,24 +10,24 @@ const exportJSON = workerData.config.exportJSON ?? false;
 
 let creeps = {};
 
-function readDirectory(inputFolder) {
-    const fList = fs.readdirSync(inputFolder);
+async function readDirectory(inputFolder) {
+    const fList = await fs.readdir(inputFolder);
 
-    fList.forEach(file => {
+    for (const file of fList) {
         const filePath = path.join(inputFolder, file);
-        const stat = fs.statSync(filePath);
+        const stat = await fs.stat(filePath);
 
         if (stat.isDirectory()) {
             // If the item is a directory, recursively read it
-            readDirectory(filePath);
+            await readDirectory(filePath);
         } else {
             // Process the file if it's not a directory
-            processFile(filePath);
+            await processFile(filePath);
         }
-    });
+    }
 }
 
-function processFile(filePath) {
+async function processFile(filePath) {
     const data = require(filePath)[0]?.MonoBehaviour;
 
     if (!data || !data._creepName) {
@@ -37,7 +37,7 @@ function processFile(filePath) {
 
     let element = "Normal";
     if (data._combatElement?.guid) {
-        const asset = findAssetById(data._combatElement.guid, workerData.projectPath);
+        const asset = await findAssetById(data._combatElement.guid, workerData.projectPath);
         parentPort.postMessage({ message: asset.message });
         element = asset.data?._elementName;
     }
@@ -72,11 +72,13 @@ function processFile(filePath) {
     parentPort.postMessage({ message: `Added Creep [${data._creepName}].` });
 }
 
-readDirectory(inputDir);
+(async () => {
+    await readDirectory(inputDir);
 
-const luaTable = jsonToLua(creeps);
+    const luaTable = jsonToLua(creeps);
 
-fs.mkdirSync(outputDir, { recursive: true });
-fs.writeFileSync(path.join(outputDir, `${workerData.parser}.lua`), luaTable);
-if (exportJSON) fs.writeFileSync(path.join(outputDir, `${workerData.parser}.json`), JSON.stringify(creeps, null, 4));
-parentPort.postMessage({ finished: true, message: "Finished parsing Creeps." });
+    await fs.mkdir(outputDir, { recursive: true });
+    await fs.writeFile(path.join(outputDir, `${workerData.parser}.lua`), luaTable);
+    if (exportJSON) await fs.writeFile(path.join(outputDir, `${workerData.parser}.json`), JSON.stringify(creeps, null, 4));
+    parentPort.postMessage({ finished: true, message: "Finished parsing Creeps." });
+})();

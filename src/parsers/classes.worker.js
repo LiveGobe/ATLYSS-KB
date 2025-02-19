@@ -16,7 +16,7 @@ const excludedSkills = ["Geyser", "Flak", "Talus"];
 
 let classes = {};
 
-function getRankDescription(skill, rank) {
+async function getRankDescription(skill, rank) {
     const playerStats = { attackPower: 1, magicPower: 1, dexPower: 1 };
 
     let skpValue = 0;
@@ -45,7 +45,7 @@ function getRankDescription(skill, rank) {
 
     if (rankDescriptor.includes("$SKP")) {
         if (skill._skillRanks[rank]._skillObjectOutput._skillObjectCondition._scriptableCondition.guid) {
-            const conditionAsset = findAssetById(skill._skillRanks[rank]._skillObjectOutput._skillObjectCondition._scriptableCondition.guid, workerData.projectPath);
+            const conditionAsset = await findAssetById(skill._skillRanks[rank]._skillObjectOutput._skillObjectCondition._scriptableCondition.guid, workerData.projectPath);
             const conditionData = conditionAsset.data;
             parentPort.postMessage({ message: conditionAsset.message });
             const basePowerValue = conditionData?._basePowerValue || 0;
@@ -62,7 +62,7 @@ function getRankDescription(skill, rank) {
     }
 
     if (skill._skillRanks[rank]._selfConditionOutput.guid) {
-        const selfConditionAsset = findAssetById(skill._skillRanks[rank]._selfConditionOutput.guid, workerData.projectPath);
+        const selfConditionAsset = await findAssetById(skill._skillRanks[rank]._selfConditionOutput.guid, workerData.projectPath);
         const selfConditionData = selfConditionAsset.data;
         parentPort.postMessage({ message: selfConditionAsset.message });
         if (selfConditionData) {
@@ -132,27 +132,27 @@ function locateSkillFile(guid, skillDir) {
     return searchDirectory(skillDir);
 }
 
-function processSkillFolder(skillFolderPath, className) {
+async function processSkillFolder(skillFolderPath, className) {
     const folders = fs.readdirSync(skillFolderPath);
 
-    folders.forEach(folder => {
+    for (const folder of folders) {
         const filesInFolder = fs.readdirSync(path.join(skillFolderPath, folder));
 
         const skillFiles = filesInFolder.filter(file => /^skill_.*\.json$/.test(file));
 
         if (skillFiles.length === 0) {
             parentPort.postMessage({ message: `No skill files found in folder ${folder}` });
-            return;
+            continue;
         }
 
-        skillFiles.forEach(file => {
-            if (file.endsWith("_0.json")) return;
+        for (const file of skillFiles) {
+            if (file.endsWith("_0.json")) continue;
 
             const skillData = require(path.join(skillFolderPath, folder, file))[0]?.MonoBehaviour;
 
             if (!skillData || excludedSkills.includes(skillData._skillName)) {
                 parentPort.postMessage({ message: `File ${file} doesn't contain any MonoBehaviour` });
-                return;
+                continue;
             }
 
             if (!classes[className].skills) {
@@ -164,40 +164,40 @@ function processSkillFolder(skillFolderPath, className) {
                 description: skillData._skillDescription.replaceAll("\n", "\\n").replaceAll("</color>", "</span>").replace(/\<color=(\w*)\>/g, `<span style=\\"color: $1;\\">`),
                 damageType: damageTypes[skillData._skillDamageType],
                 type: determineSkillType(path.join(skillFolderPath, folder, file)),
-                ranks: skillData._skillRanks.map((rank, rankNum) => ({
+                ranks: await Promise.all(skillData._skillRanks.map(async (rank, rankNum) => ({
                     rankTag: rank._rankTag,
-                    description: getRankDescription(skillData, rankNum).replaceAll("\n", "\\n").replaceAll("</color>", "</span>").replace(/\<color=(\w*)\>/g, `<span style=\\"color: $1;\\">`),
+                    description: (await getRankDescription(skillData, rankNum)).replaceAll("\n", "\\n").replaceAll("</color>", "</span>").replace(/\<color=(\w*)\>/g, `<span style=\\"color: $1;\\">`),
                     level: rank._levelRequirement,
                     castTime: rank._castTime,
                     cooldown: rank._coolDown,
-                    itemCost: rank._requiredItem?.guid ? "x" + rank._requiredItemQuantity + " " + findAssetById(rank._requiredItem.guid, workerData.projectPath).data._itemName : "",
+                    itemCost: rank._requiredItem?.guid ? "x" + rank._requiredItemQuantity + " " + (await findAssetById(rank._requiredItem.guid, workerData.projectPath)).data._itemName : "",
                     manaCost: rank._manaCost,
                     healthCost: rank._healthCost,
                     staminaCost: rank._staminaCost
-                }))
+                })))
             });
 
             parentPort.postMessage({ message: `Added Skill [${skillData._skillName}] to Class [${className}].` });
-        });
-    });
+        }
+    }
 }
 
-function processClassSkills() {
+async function processClassSkills() {
     const filesList = fs.readdirSync(inputDir);
 
-    filesList.forEach(file => {
+    for (const file of filesList) {
         const data = require(path.join(inputDir, file))[0]?.MonoBehaviour;
 
         if (!data) {
             parentPort.postMessage({ message: `File ${file} doesn't contain any MonoBehaviour` });
-            return;
+            continue;
         }
 
         const className = data._className;
         classes[className] = { name: className, skills: [] };
 
-        data._classSkills.forEach(skill => {
-            const skillAsset = findAssetById(skill.guid, workerData.projectPath);
+        for (const skill of data._classSkills) {
+            const skillAsset = await findAssetById(skill.guid, workerData.projectPath);
             const skillData = skillAsset.data;
             parentPort.postMessage({ message: skillAsset.message });
 
@@ -206,7 +206,7 @@ function processClassSkills() {
 
                 if (!skillFilePath) {
                     parentPort.postMessage({ message: `Skill file for GUID ${skill.guid} not found.` });
-                    return;
+                    continue;
                 }
 
                 classes[className].skills.push({
@@ -214,37 +214,37 @@ function processClassSkills() {
                     description: skillData._skillDescription.replaceAll("\n", "\\n").replaceAll("</color>", "</span>").replace(/\<color=(\w*)\>/g, `<span style=\\"color: $1;\\">`),
                     damageType: damageTypes[skillData._skillDamageType],
                     type: determineSkillType(skillFilePath),
-                    ranks: skillData._skillRanks.map((rank, rankNum) => ({
+                    ranks: await Promise.all(skillData._skillRanks.map(async (rank, rankNum) => ({
                         rankTag: rank._rankTag,
-                        description: getRankDescription(skillData, rankNum).replaceAll("\n", "\\n").replaceAll("</color>", "</span>").replace(/\<color=(\w*)\>/g, `<span style=\\"color: $1;\\">`),
+                        description: (await getRankDescription(skillData, rankNum)).replaceAll("\n", "\\n").replaceAll("</color>", "</span>").replace(/\<color=(\w*)\>/g, `<span style=\\"color: $1;\\">`),
                         level: rank._levelRequirement,
                         castTime: rank._castTime,
                         cooldown: rank._coolDown,
-                        itemCost: rank._requiredItem?.guid ? "x" + rank._requiredItemQuantity + " " + findAssetById(rank._requiredItem.guid, workerData.projectPath).data._itemName : "",
+                        itemCost: rank._requiredItem?.guid ? "x" + rank._requiredItemQuantity + " " + (await findAssetById(rank._requiredItem.guid, workerData.projectPath)).data._itemName : "",
                         manaCost: rank._manaCost,
                         healthCost: rank._healthCost,
                         staminaCost: rank._staminaCost
-                    }))
+                    })))
                 });
 
                 parentPort.postMessage({ message: `Added Skill [${skillData._skillName}] to Class [${className}].` });
             }
-        });
+        }
 
         parentPort.postMessage({ message: `Added Class [${className}] with skills.` });
-    });
+    }
 
     classes["Novice"] = { name: "Novice", skills: [] };
-    processSkillFolder(noviceSkillsDir, "Novice");
-    processSkillFolder(skillScrollDir, "Novice");
-    processSkillFolder(path.join(skillScrollDir, "00_masteries"), "Novice");
+    await processSkillFolder(noviceSkillsDir, "Novice");
+    await processSkillFolder(skillScrollDir, "Novice");
+    await processSkillFolder(path.join(skillScrollDir, "00_masteries"), "Novice");
 }
 
-processClassSkills();
+processClassSkills().then(() => {
+    const luaTable = jsonToLua(classes);
 
-const luaTable = jsonToLua(classes);
-
-fs.mkdirSync(outputDir, { recursive: true });
-fs.writeFileSync(path.join(outputDir, `${workerData.parser}.lua`), luaTable);
-if (exportJSON) fs.writeFileSync(path.join(outputDir, `${workerData.parser}.json`), JSON.stringify(classes, null, 4));
-parentPort.postMessage({ finished: true, message: "Finished parsing Classes." });
+    fs.mkdirSync(outputDir, { recursive: true });
+    fs.writeFileSync(path.join(outputDir, `${workerData.parser}.lua`), luaTable);
+    if (exportJSON) fs.writeFileSync(path.join(outputDir, `${workerData.parser}.json`), JSON.stringify(classes, null, 4));
+    parentPort.postMessage({ finished: true, message: "Finished parsing Classes." });
+});

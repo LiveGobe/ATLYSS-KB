@@ -23,5 +23,10 @@
         "name": "Creeps",
         "parser": "creeps",
         "pageTitle": "Module:Creeps/data"
+    },
+    {
+        "name": "Drop Tables",
+        "parser": "dropTables",
+        "pageTitle": "Module:DropTables/data"
     }
 ]

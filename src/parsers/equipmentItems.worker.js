@@ -1,4 +1,4 @@
-const fs = require("node:fs");
+const fs = require("node:fs").promises;
 const path = require("node:path");
 const { parentPort, workerData } = require("worker_threads");
 const itemRarities = require("../bin/itemRarities");
@@ -11,21 +11,21 @@ const exportJSON = workerData.config.exportJSON ?? false;
 
 let equipmentItems = {};
 
-function readDirectory(inputFolder) {
-    const fList = fs.readdirSync(inputFolder);
+async function readDirectory(inputFolder) {
+    const fList = await fs.readdir(inputFolder);
 
-    fList.forEach(file => {
+    for (const file of fList) {
         const filePath = path.join(inputFolder, file);
-        const stat = fs.statSync(filePath);
+        const stat = await fs.stat(filePath);
 
         if (stat.isDirectory()) {
             // If the item is a directory, recursively read it
-            readDirectory(filePath);
+            await readDirectory(filePath);
         } else {
             // Process the file if it's not a directory
-            processFile(filePath);
+            await processFile(filePath);
         }
-    });
+    }
 }
 
 function getType(itemName) {
@@ -47,7 +47,7 @@ function getType(itemName) {
     return "";
 }
 
-function processFile(filePath) {
+async function processFile(filePath) {
     const data = require(filePath)[0]?.MonoBehaviour;
 
     if (!data || !data._itemName) {
@@ -59,14 +59,14 @@ function processFile(filePath) {
 
     let enchantmentItem = "";
     if (data._statModifierCost._scriptItem.guid) {
-        const asset = findAssetById(data._statModifierCost._scriptItem.guid, workerData.projectPath);
+        const asset = await findAssetById(data._statModifierCost._scriptItem.guid, workerData.projectPath);
         parentPort.postMessage({ message: asset.message });
         enchantmentItem = asset.data?._itemName ?? "";
     }
 
     let classRequirement = "Any";
     if (data._classRequirement?.guid) {
-        const asset = findAssetById(data._classRequirement.guid, workerData.projectPath);
+        const asset = await findAssetById(data._classRequirement.guid, workerData.projectPath);
         parentPort.postMessage({ message: asset.message });
         classRequirement = asset.data?._className;
     }
@@ -100,7 +100,7 @@ function processFile(filePath) {
     if (data._weaponDamage) {
         let element = "Normal";
         if (data._combatElement?.guid) {
-            const asset = findAssetById(data._combatElement.guid, workerData.projectPath);
+            const asset = await findAssetById(data._combatElement.guid, workerData.projectPath);
             parentPort.postMessage({ message: asset.message });
             element = asset.data?._elementName;
         }
@@ -122,11 +122,13 @@ function processFile(filePath) {
     parentPort.postMessage({ message: `Added Equipment Item [${data._itemName}].` });
 }
 
-readDirectory(inputDir);
+(async () => {
+    await readDirectory(inputDir);
 
-const luaTable = jsonToLua(equipmentItems);
+    const luaTable = jsonToLua(equipmentItems);
 
-fs.mkdirSync(outputDir, { recursive: true });
-fs.writeFileSync(path.join(outputDir, `${workerData.parser}.lua`), luaTable);
-if (exportJSON) fs.writeFileSync(path.join(outputDir, `${workerData.parser}.json`), JSON.stringify(equipmentItems, null, 4));
-parentPort.postMessage({ finished: true, message: "Finished parsing Equipment Items." });
+    await fs.mkdir(outputDir, { recursive: true });
+    await fs.writeFile(path.join(outputDir, `${workerData.parser}.lua`), luaTable);
+    if (exportJSON) await fs.writeFile(path.join(outputDir, `${workerData.parser}.json`), JSON.stringify(equipmentItems, null, 4));
+    parentPort.postMessage({ finished: true, message: "Finished parsing Equipment Items." });
+})();

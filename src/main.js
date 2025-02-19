@@ -416,7 +416,7 @@ const createWindow = () => {
 
   ipcMain.handle("clearCache", async () => {
     const projectPath = getProjectPath();
-    const cacheFilePath = path.join(projectPath, 'data', 'cache.json');
+    const cacheFilePath = path.join(projectPath, 'data', 'cache.db');
 
     if (fs.existsSync(cacheFilePath)) {
       fs.rmSync(cacheFilePath, { force: true });
