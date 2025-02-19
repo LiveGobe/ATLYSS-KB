@@ -18,5 +18,10 @@
         "name": "Classes",
         "parser": "classes",
         "pageTitle": "Module:Classes/data"
+    },
+    {
+        "name": "Creeps",
+        "parser": "creeps",
+        "pageTitle": "Module:Creeps/data"
     }
 ]
