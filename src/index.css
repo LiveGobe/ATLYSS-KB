@@ -111,12 +111,12 @@ main {
   overflow-y: hidden;
   overflow-x: auto;
 
-  & > #game-data-version {
+  &>#game-data-version {
     margin-right: 10px;
     margin-left: 10px;
   }
 
-  & > #game-data-path {
+  &>#game-data-path {
     &:hover {
       cursor: pointer;
       background-color: #0077cc;
@@ -124,7 +124,8 @@ main {
   }
 }
 
-#menu-logs, #menu-content {
+#menu-logs,
+#menu-content {
   height: 100%;
 }
 
@@ -137,7 +138,8 @@ main {
   width: 50%;
 }
 
-#scripts-selection, #uploads-selection {
+#scripts-selection,
+#uploads-selection {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 0.5rem;
@@ -146,7 +148,9 @@ main {
   padding: 0.5rem;
 }
 
-button.script-select, button.upload-select {
+button.script-select,
+button.upload-select {
+  height: 2rem;
   border: none;
   border-radius: 5px;
   background-color: #b30000;
