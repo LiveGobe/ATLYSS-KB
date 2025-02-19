@@ -108,7 +108,7 @@ function processFile(filePath) {
         equipmentItems[data._itemName].weapon = {
             element: element,
             minBase: Math.trunc(data._readonlyDamageRange.x),
-            maxBase: Math.trunc(data._readonlyDamageRange.y)
+            maxBase: Math.trunc(data._readonlyDamageRange.true)
         };
     } else if (data._blockDamageThreshold) {
         equipmentItems[data._itemName].blockDamage = data._blockDamageThreshold;

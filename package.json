@@ -1,7 +1,7 @@
 {
   "name": "atlyss-wiki",
   "productName": "atlyss-wiki",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A port from Atlyss-Data-Parcer-Wiki, now with GUI",
   "main": ".webpack/main",
   "scripts": {
