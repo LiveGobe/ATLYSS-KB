@@ -28,5 +28,15 @@
         "name": "Drop Tables",
         "parser": "dropTables",
         "pageTitle": "Module:DropTables/data"
+    },
+    {
+        "name": "NPCs",
+        "parser": "npcs",
+        "pageTitle": "Module:NPC/data"
+    },
+    {
+        "name": "Locations",
+        "parser": "locations",
+        "pageTitle": "Module:Locations/data"
     }
 ]
