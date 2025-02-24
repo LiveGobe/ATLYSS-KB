@@ -1,4 +1,5 @@
-const fs = require("node:fs").promises;
+const fsPromise = require("node:fs").promises;
+const fs = require("node:fs");
 const path = require("node:path");
 const { parentPort, workerData } = require("worker_threads");
 const findAssetById = require("../bin/findAssetById");
@@ -12,11 +13,11 @@ const exportJSON = workerData.config.exportJSON ?? false;
 let npcs = {};
 
 async function readDirectory(inputFolder) {
-    const fList = await fs.readdir(inputFolder);
+    const fList = await fsPromise.readdir(inputFolder);
 
     for (const file of fList) {
         const filePath = path.join(inputFolder, file);
-        const stat = await fs.stat(filePath);
+        const stat = await fsPromise.stat(filePath);
 
         if (stat.isDirectory()) {
             // If the item is a directory, recursively read it
@@ -33,7 +34,7 @@ async function processFile(filePath) {
         parentPort.postMessage({ message: `File ${path.basename(filePath)} isn't an NPC file` });
         return;
     }
-    const npcData = require(filePath).filter(i => i.MonoBehaviour).find(i => i.MonoBehaviour._npcName)?.MonoBehaviour;
+    const npcData = JSON.parse(fs.readFileSync(filePath, "utf-8")).filter(i => i.MonoBehaviour).find(i => i.MonoBehaviour._npcName)?.MonoBehaviour;
 
     if (!npcData || !npcData._npcName) {
         parentPort.postMessage({ message: `File ${path.basename(filePath)} doesn't contain any MonoBehaviour` });
@@ -41,18 +42,18 @@ async function processFile(filePath) {
     }
 
     const npcFolder = path.dirname(filePath);
-    const shopKeepFile = (await fs.readdir(npcFolder)).find(file => file.startsWith("shopKeep"));
+    const shopKeepFile = (await fsPromise.readdir(npcFolder)).find(file => file.startsWith("shopKeep"));
     let shopData;
     if (shopKeepFile) {
-        shopData = require(path.join(npcFolder, shopKeepFile))[0]?.MonoBehaviour;
+        shopData = JSON.parse(fs.readFileSync(path.join(npcFolder, shopKeepFile), "utf-8"))[0]?.MonoBehaviour;
     }
 
     let questsData = [];
     try {
-        const questFiles = await fs.readdir(path.join(npcFolder, "_quest"));
+        const questFiles = await fsPromise.readdir(path.join(npcFolder, "_quest"));
         if (questFiles) {
             for (const file of questFiles) {
-                questsData.push(require(path.join(npcFolder, "_quest", file))[0]?.MonoBehaviour);
+                questsData.push(JSON.parse(fs.readFileSync(path.join(npcFolder, "_quest", file), "utf-8"))[0]?.MonoBehaviour);
             }
         }
     } catch (e) {
@@ -157,8 +158,8 @@ async function processFile(filePath) {
 
     const luaTable = jsonToLua(npcs);
 
-    await fs.mkdir(outputDir, { recursive: true });
-    await fs.writeFile(path.join(outputDir, `${workerData.parser}.lua`), luaTable);
-    if (exportJSON) await fs.writeFile(path.join(outputDir, `${workerData.parser}.json`), JSON.stringify(npcs, null, 4));
+    await fsPromise.mkdir(outputDir, { recursive: true });
+    await fsPromise.writeFile(path.join(outputDir, `${workerData.parser}.lua`), luaTable);
+    if (exportJSON) await fsPromise.writeFile(path.join(outputDir, `${workerData.parser}.json`), JSON.stringify(npcs, null, 4));
     parentPort.postMessage({ finished: true, message: "Finished parsing NPCs." });
 })();

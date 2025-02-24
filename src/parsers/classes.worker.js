@@ -148,7 +148,7 @@ async function processSkillFolder(skillFolderPath, className) {
         for (const file of skillFiles) {
             if (file.endsWith("_0.json")) continue;
 
-            const skillData = require(path.join(skillFolderPath, folder, file))[0]?.MonoBehaviour;
+            const skillData = JSON.parse(fs.readFileSync(path.join(skillFolderPath, folder, file), "utf-8"))[0]?.MonoBehaviour;
 
             if (!skillData || excludedSkills.includes(skillData._skillName)) {
                 parentPort.postMessage({ message: `File ${file} doesn't contain any MonoBehaviour` });
@@ -186,7 +186,7 @@ async function processClassSkills() {
     const filesList = fs.readdirSync(inputDir);
 
     for (const file of filesList) {
-        const data = require(path.join(inputDir, file))[0]?.MonoBehaviour;
+        const data = JSON.parse(fs.readFileSync(path.join(inputDir, file), "utf-8"))[0]?.MonoBehaviour;
 
         if (!data) {
             parentPort.postMessage({ message: `File ${file} doesn't contain any MonoBehaviour` });

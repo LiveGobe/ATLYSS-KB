@@ -92,3 +92,6 @@ typings/
 out/
 data/
 export/
+
+# AssetRipper.CLI Plugin
+AssetRipper.CLI.exe

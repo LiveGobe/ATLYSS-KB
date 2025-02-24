@@ -46,7 +46,7 @@ function getType(fileName) {
 }
 
 async function processFile(filePath) {
-    const data = require(filePath)[0]?.MonoBehaviour;
+    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"))[0]?.MonoBehaviour;
 
     if (!data || !data._itemDrops || !Array.isArray(data._itemDrops) || data._itemDrops.length === 0) {
         parentPort.postMessage({ message: `File ${path.basename(filePath)} doesn't contain valid _itemDrops.` });

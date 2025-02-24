@@ -13,7 +13,7 @@ const filesList = fs.readdirSync(inputDir);
 let tradeItems = {};
 async function processFiles() {
     for (const file of filesList) {
-        const data = require(path.join(inputDir, file))[0]?.MonoBehaviour;
+        const data = JSON.parse(fs.readFileSync(path.join(inputDir, file), "utf-8"))[0]?.MonoBehaviour;
 
         if (!data) {
             parentPort.postMessage({ message: `File ${path.basename(file)} doesn't contain any MonoBehaviour.` });

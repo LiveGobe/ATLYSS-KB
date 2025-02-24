@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('api', {
     getAvailableUploads: () => ipcRenderer.invoke("getAvailableUploads"),
     uploadData: (parsers) => ipcRenderer.invoke("uploadData", parsers),
     clearCache: () => ipcRenderer.invoke("clearCache"),
+    getPage: (title) => ipcRenderer.invoke("getPage", title),
+    ripAssets: () => ipcRenderer.invoke("ripAssets"),
     onRecieveFilesCount: (callback) => ipcRenderer.on("receiveFilesCount", (e, filesCount, totalCount) => callback(filesCount, totalCount)),
     onStateChange: (callback) => ipcRenderer.on("stateChange", (e, state) => callback(state)),
     onLogMessage: (callback) => ipcRenderer.on("logMessage", (e, message) => callback(message)),

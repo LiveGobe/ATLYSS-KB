@@ -1,4 +1,5 @@
-const fs = require("node:fs").promises;
+const fsPromise = require("node:fs").promises;
+const fs = require("node:fs");
 const path = require("node:path");
 const { parentPort, workerData } = require("worker_threads");
 const findAssetById = require("../bin/findAssetById");
@@ -26,11 +27,11 @@ function getType(type) {
 }
 
 async function readDirectory(inputFolder) {
-    const fList = await fs.readdir(inputFolder);
+    const fList = await fsPromise.readdir(inputFolder);
 
     for (const file of fList) {
         const filePath = path.join(inputFolder, file);
-        const stat = await fs.stat(filePath);
+        const stat = await fsPromise.stat(filePath);
 
         if (stat.isDirectory()) {
             await readDirectory(filePath);
@@ -41,7 +42,7 @@ async function readDirectory(inputFolder) {
 }
 
 async function processFile(filePath) {
-    const data = require(filePath);
+    const data = JSON.parse(fs.readFileSync(filePath), "utf-8");
     const creepSpawnData = data.filter(v => v.MonoBehaviour?._creepToSpawn);
     const creepArenaData = data.filter(v => v.MonoBehaviour?._creepArenaSlots);
     const mapData = data.filter(v => v.MonoBehaviour?._mapName);
@@ -109,8 +110,8 @@ async function processFile(filePath) {
 
     const luaTable = jsonToLua(locations);
 
-    await fs.mkdir(outputDir, { recursive: true });
-    await fs.writeFile(path.join(outputDir, `${workerData.parser}.lua`), luaTable);
-    if (exportJSON) await fs.writeFile(path.join(outputDir, `${workerData.parser}.json`), JSON.stringify(locations, null, 4));
+    await fsPromise.mkdir(outputDir, { recursive: true });
+    await fsPromise.writeFile(path.join(outputDir, `${workerData.parser}.lua`), luaTable);
+    if (exportJSON) await fsPromise.writeFile(path.join(outputDir, `${workerData.parser}.json`), JSON.stringify(locations, null, 4));
     parentPort.postMessage({ finished: true, message: "Finished parsing Locations." });
 })();

@@ -7,6 +7,8 @@ import { Worker } from 'worker_threads';
 import mw from './bin/nodemw/bot';
 import parsers from "./parsers.json";
 import compareVersions from './compareVersions';
+import { execFile } from 'child_process';
+import axios from 'axios'; // Add this import for fetching the script content
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -46,12 +48,16 @@ const createWindow = () => {
     return { action: 'deny' };
   });
 
-  // Change CSP to allow external links
+  // Change CSP to allow external links and stylesheets
   mainWindow.webContents.session.webRequest.onHeadersReceived({ urls: ['*://*/*'] }, (details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ['default-src \'self\' \'unsafe-inline\' \'unsafe-eval\' data: https: http:']
+        'Content-Security-Policy': [
+          "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https: http: blob:",
+          "style-src 'self' 'unsafe-inline' https: http:",
+          "frame-src 'self' blob: atlyss.wiki.gg"
+        ]
       }
     });
   });
@@ -268,9 +274,33 @@ const createWindow = () => {
     let parsersDone = 0;
 
     for (let parser of p) {
-      const worker = new Worker(new URL(`./parsers/${parser}.worker.js`, import.meta.url), {
-        workerData: { parser, rawDataPath, projectPath, config }
-      });
+      let worker;
+      switch (parser) {
+        case "classes":
+          worker = new Worker(new URL("./parsers/classes.worker.js", import.meta.url), { workerData: { parser, rawDataPath, projectPath, config } });
+          break;
+        case "consumableItems":
+          worker = new Worker(new URL("./parsers/consumableItems.worker.js", import.meta.url), { workerData: { parser, rawDataPath, projectPath, config } });
+          break;
+        case "creeps":
+          worker = new Worker(new URL("./parsers/creeps.worker.js", import.meta.url), { workerData: { parser, rawDataPath, projectPath, config } });
+          break;
+        case "dropTables":
+          worker = new Worker(new URL("./parsers/dropTables.worker.js", import.meta.url), { workerData: { parser, rawDataPath, projectPath, config } });
+          break;
+        case "equipmentItems":
+          worker = new Worker(new URL("./parsers/equipmentItems.worker.js", import.meta.url), { workerData: { parser, rawDataPath, projectPath, config } });
+          break;
+        case "locations":
+          worker = new Worker(new URL("./parsers/locations.worker.js", import.meta.url), { workerData: { parser, rawDataPath, projectPath, config } });
+          break;
+        case "npcs":
+          worker = new Worker(new URL("./parsers/npcs.worker.js", import.meta.url), { workerData: { parser, rawDataPath, projectPath, config } });
+          break;
+        case "tradeItems":
+          worker = new Worker(new URL("./parsers/tradeItems.worker.js", import.meta.url), { workerData: { parser, rawDataPath, projectPath, config } });
+          break;
+      }
 
       worker.on('message', (data) => {
         if (data.error) {
@@ -375,7 +405,7 @@ const createWindow = () => {
           await editArticle(`${upload.pageTitle}/version.json`, JSON.stringify({ version: versionName }, null, 2), `(Automated Update Using ATLYSS-KB) Bumped module ${upload.parser} to version ${versionName}`);
 
           const articleData = await getArticle(upload.pageTitle);
-          
+
           const filePath = path.join(projectPath, 'data', 'parsed', upload.parser, `${upload.parser}.lua`);
           const newContent = fs.readFileSync(filePath, "utf8");
 
@@ -428,6 +458,191 @@ const createWindow = () => {
     }
   });
 
+  let cachedJQuery = null; // Variable to store cached jQuery
+
+  async function getJQueryInline() {
+    if (cachedJQuery) return cachedJQuery; // Return cached version if available
+
+    try {
+      const response = await axios.get('https://code.jquery.com/jquery-3.7.1.min.js');
+      cachedJQuery = response.data; // Store jQuery script in cache
+      return cachedJQuery;
+    } catch (error) {
+      console.error("Failed to load jQuery:", error);
+      throw error;
+    }
+  }
+
+  const pageCommonCache = {
+    commonJS: null,
+    commonCSS: null,
+  };
+
+  ipcMain.handle("getPage", async (_, title) => {
+    const client = new mw({
+      protocol: "https",
+      server: "atlyss.wiki.gg",
+      path: "",
+      debug: app.isPackaged ? false : true
+    });
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Get parsed page content
+        client.api.call(
+          { action: "parse", page: title, prop: "text|headhtml|modules|jsconfigvars", redirects: true },
+          async (err, info, next, data) => {
+            if (err) return reject(err);
+
+            // Fetch common.js and common.css only if they haven't been cached
+            if (!pageCommonCache.commonJS) {
+              client.getArticle("MediaWiki:Common.js", async (error, common) => {
+                if (error) return reject(error);
+
+                // Cache common.js content
+                pageCommonCache.commonJS = common;
+
+                // Fetch common.css only if it hasn't been cached
+                if (!pageCommonCache.commonCSS) {
+                  client.getArticle("MediaWiki:Common.css", async (error, commonCSS) => {
+                    if (error) return reject(error);
+
+                    // Cache common.css content
+                    pageCommonCache.commonCSS = commonCSS;
+
+                    // Process the parsed content
+                    processParsedContent(data, pageCommonCache, resolve, reject);
+                  });
+                } else {
+                  // Use the cached common.css
+                  processParsedContent(data, pageCommonCache, resolve, reject);
+                }
+              });
+            } else {
+              // Use the cached common.js
+              if (!pageCommonCache.commonCSS) {
+                client.getArticle("MediaWiki:Common.css", async (error, commonCSS) => {
+                  if (error) return reject(error);
+
+                  // Cache common.css content
+                  pageCommonCache.commonCSS = commonCSS;
+
+                  // Process the parsed content
+                  processParsedContent(data, pageCommonCache, resolve, reject);
+                });
+              } else {
+                // Use the cached common.css
+                processParsedContent(data, pageCommonCache, resolve, reject);
+              }
+            }
+          }
+        );
+      } catch (error) {
+        reject(error);
+      }
+    });
+
+    async function processParsedContent(data, pageCommonCache, resolve, reject) {
+      const body = data.parse.text['*']
+        .replace(/\<span class\=\"mw\-editsection\"\>.*\<\/span\>/g, "");
+
+      // Fetch the startup script
+      const startupScript = (await axios.get("https://atlyss.wiki.gg/load.php?lang=en&modules=startup&only=scripts&raw=1&skin=vector")).data.replace(`"local":"/load.php"`, `"local":"https://atlyss.wiki.gg/load.php"`);
+
+      // Then, in your iframe srcdoc:
+      const jQuery = `<script>${await getJQueryInline()}</script>`;
+
+      resolve(`
+        ${data.parse.headhtml["*"]
+          .replace(
+            "<head>",
+            `<head><base href="https://atlyss.wiki.gg/"><style>.mw-parser-output { color: #ededed; background-color: rgba(49, 52, 49, 0.9); border: 1px solid #767476; margin-right: 1em; padding: 0.5em 0.8em; } a { text-decoration: none; }</style>`
+          )
+          .replace(
+            `<script async="" src="/load.php?lang=en&amp;modules=startup&amp;only=scripts&amp;raw=1&amp;skin=vector"></script>`,
+            () => `<script>${startupScript}</script>${jQuery}<script>${pageCommonCache.commonJS}</script><style>${pageCommonCache.commonCSS}</style>`
+          )}
+        ${body}
+      </body></html>
+      `);
+    }
+  });
+
+  ipcMain.handle('ripAssets', async () => {
+    const projectPath = getProjectPath();
+    const executableName = 'AssetRipper.CLI.exe';
+    const executablePath = path.join(projectPath, executableName);
+
+    dialog.showMessageBoxSync(mainWindow, {
+      type: 'info',
+      title: 'Asset Ripper',
+      message: 'AssetRipper.CLI is a fork of AssetRipper that works in command line mode. it\'s optional and not required to run the application.',
+      detail: 'If you want to use it, please make sure to have the executable in the "resources" folder of the application. The executable is included with the application download.',
+      buttons: ['OK']
+    });
+
+    if (!fs.existsSync(executablePath)) {
+      const errorMessage = `Required plugin executable ${executableName} not found in application resources. Please download the ATLYSS-KB with the plugin included or from AssetRipper.CLI fork.`;
+      mainWindow.webContents.send("logMessage", `[ERROR] ${errorMessage}`);
+      dialog.showErrorBox("Missing Plugin", errorMessage);
+      return { error: errorMessage };
+    }
+
+    const gameExecutableResult = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [{ name: 'ATLYSS.exe', extensions: ['exe'] }],
+      message: "Select game executable"
+    });
+
+    if (gameExecutableResult.canceled || gameExecutableResult.filePaths.length === 0) {
+      const errorMessage = 'No game executable selected. Please select ATLYSS.exe!';
+      mainWindow.webContents.send("logMessage", `[ERROR] ${errorMessage}`);
+      dialog.showErrorBox("No Game Executable Selected", errorMessage);
+      return { error: errorMessage };
+    }
+
+    const gameExecutablePath = gameExecutableResult.filePaths[0];
+
+    if (path.basename(gameExecutablePath) !== 'ATLYSS.exe') {
+      const errorMessage = 'Invalid executable name. Expected "ATLYSS.exe".';
+      mainWindow.webContents.send("logMessage", `[ERROR] ${errorMessage}`);
+      dialog.showErrorBox("Invalid Executable", errorMessage);
+      return { error: errorMessage };
+    }
+
+    const exportFolderResult = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory'],
+      message: "Select a folder for data output"
+    });
+
+    if (exportFolderResult.canceled || exportFolderResult.filePaths.length === 0) {
+      const errorMessage = 'No export folder selected.';
+      mainWindow.webContents.send("logMessage", `[ERROR] ${errorMessage}`);
+      dialog.showErrorBox("No Export Folder Selected", errorMessage);
+      return { error: errorMessage };
+    }
+
+    const exportFolderPath = exportFolderResult.filePaths[0];
+
+    return new Promise((resolve, reject) => {
+      execFile(executablePath, [gameExecutablePath, exportFolderPath], (error, stdout, stderr) => {
+        if (error) {
+          mainWindow.webContents.send("logMessage", `[ERROR] Couldn't execute file: ${executableName}. Error message: ${error.message}`);
+          dialog.showMessageBox(mainWindow, { message: `Couldn't execute file: ${executableName}. Error message: ${error.message}`, buttons: ["OK"] });
+          return reject({ error: error.message });
+        }
+        if (stderr) {
+          mainWindow.webContents.send("logMessage", `[ERROR] Execution error: ${stderr}`);
+          dialog.showMessageBox(mainWindow, { message: `Execution error: ${stderr}`, buttons: ["OK"] });
+          return reject({ error: stderr });
+        }
+        mainWindow.webContents.send("logMessage", `Executed file: ${executableName} successfully! Output: ${stdout}`);
+        dialog.showMessageBox(mainWindow, { message: `Successfully ripped game's files! Ready to parse.`, buttons: ["OK"] });
+        resolve({ success: true, output: stdout });
+      });
+    });
+  });
+
   // Open the DevTools.
   // mainWindow.webContents.openDevTools();
 };
@@ -436,6 +651,8 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+
+
   createWindow();
 
   // On OS X it's common to re-create a window in the app when the

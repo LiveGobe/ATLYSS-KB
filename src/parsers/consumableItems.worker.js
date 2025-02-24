@@ -37,7 +37,7 @@ function getType(itemName) {
 }
 
 function processFile(filePath) {
-    const data = require(filePath)[0]?.MonoBehaviour;
+    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"))[0]?.MonoBehaviour;
 
     if (!data || !data._itemName) {
         parentPort.postMessage({ message: `File ${path.basename(filePath)} doesn't contain any MonoBehaviour.` });

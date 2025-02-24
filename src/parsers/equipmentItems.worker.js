@@ -1,4 +1,5 @@
-const fs = require("node:fs").promises;
+const fsPromise = require("node:fs").promises;
+const fs = require("fs");
 const path = require("node:path");
 const { parentPort, workerData } = require("worker_threads");
 const itemRarities = require("../bin/itemRarities");
@@ -12,11 +13,11 @@ const exportJSON = workerData.config.exportJSON ?? false;
 let equipmentItems = {};
 
 async function readDirectory(inputFolder) {
-    const fList = await fs.readdir(inputFolder);
+    const fList = await fsPromise.readdir(inputFolder);
 
     for (const file of fList) {
         const filePath = path.join(inputFolder, file);
-        const stat = await fs.stat(filePath);
+        const stat = await fsPromise.stat(filePath);
 
         if (stat.isDirectory()) {
             // If the item is a directory, recursively read it
@@ -48,7 +49,7 @@ function getType(itemName) {
 }
 
 async function processFile(filePath) {
-    const data = require(filePath)[0]?.MonoBehaviour;
+    const data = JSON.parse(fs.readFileSync(filePath), "utf-8")[0]?.MonoBehaviour;
 
     if (!data || !data._itemName) {
         parentPort.postMessage({ message: `File ${path.basename(filePath)} doesn't contain any MonoBehaviour.` });
@@ -127,8 +128,8 @@ async function processFile(filePath) {
 
     const luaTable = jsonToLua(equipmentItems);
 
-    await fs.mkdir(outputDir, { recursive: true });
-    await fs.writeFile(path.join(outputDir, `${workerData.parser}.lua`), luaTable);
-    if (exportJSON) await fs.writeFile(path.join(outputDir, `${workerData.parser}.json`), JSON.stringify(equipmentItems, null, 4));
+    await fsPromise.mkdir(outputDir, { recursive: true });
+    await fsPromise.writeFile(path.join(outputDir, `${workerData.parser}.lua`), luaTable);
+    if (exportJSON) await fsPromise.writeFile(path.join(outputDir, `${workerData.parser}.json`), JSON.stringify(equipmentItems, null, 4));
     parentPort.postMessage({ finished: true, message: "Finished parsing Equipment Items." });
 })();
