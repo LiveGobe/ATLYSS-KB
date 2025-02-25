@@ -549,11 +549,12 @@ const createWindow = () => {
       // Fetch the startup script
       const startupScript = (await axios.get("https://atlyss.wiki.gg/load.php?lang=en&modules=startup&only=scripts&raw=1&skin=vector")).data.replace(`"local":"/load.php"`, `"local":"https://atlyss.wiki.gg/load.php"`);
 
-      // Then, in your iframe srcdoc:
+      // Inject custom jQuery script
       const jQuery = `<script>${await getJQueryInline()}</script>`;
 
+      // Resolve the srcdoc content with all necessary scripts
       resolve(`
-        ${data.parse.headhtml["*"]
+          ${data.parse.headhtml["*"]
           .replace(
             "<head>",
             `<head><base href="https://atlyss.wiki.gg/"><style>.mw-parser-output { color: #ededed; background-color: rgba(49, 52, 49, 0.9); border: 1px solid #767476; margin-right: 1em; padding: 0.5em 0.8em; } a { text-decoration: none; }</style>`
@@ -562,7 +563,7 @@ const createWindow = () => {
             `<script async="" src="/load.php?lang=en&amp;modules=startup&amp;only=scripts&amp;raw=1&amp;skin=vector"></script>`,
             () => `<script>${startupScript}</script>${jQuery}<script>${pageCommonCache.commonJS}</script><style>${pageCommonCache.commonCSS}</style>`
           )}
-        ${body}
+          ${body}
       </body></html>
       `);
     }
