@@ -41,6 +41,19 @@ async function readDirectory(inputFolder) {
     }
 }
 
+async function findSceneFileByMapName(mapName) {
+    const fList = await fsPromise.readdir(inputDir);
+    for (const file of fList) {
+        const filePath = path.join(inputDir, file);
+        if (file.endsWith(".json")) {
+            const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+            const mapData = data.find(v => v.MonoBehaviour?._mapName === mapName);
+            if (mapData) return filePath;
+        }
+    }
+    return null;
+}
+
 async function processFile(filePath) {
     const data = JSON.parse(fs.readFileSync(filePath), "utf-8");
     const creepSpawnData = data.filter(v => v.MonoBehaviour?._creepToSpawn);
@@ -99,6 +112,37 @@ async function processFile(filePath) {
             locations[mapName].bosses.push(asset.data._creepName);
         } else {
             locations[mapName].creeps.push(asset.data._creepName);
+        }
+    }
+
+    const scenePortalsData = data.filter(v => v.MonoBehaviour?._scenePortal);
+
+    if (getType(mapData[0]?.MonoBehaviour._zoneType) == "Dungeon" && scenePortalsData[0]?.MonoBehaviour?._scenePortal?._portalCaptionTitle) {
+        const linkedMapName = scenePortalsData[0].MonoBehaviour._scenePortal._portalCaptionTitle;
+        const linkedFilePath = await findSceneFileByMapName(linkedMapName);
+
+        if (linkedFilePath) {
+            const linkedData = JSON.parse(fs.readFileSync(linkedFilePath, "utf-8"));
+            const linkedPortal = linkedData.find(v => v.MonoBehaviour?._scenePortal && v.MonoBehaviour._scenePortal._portalCaptionTitle === mapName);
+
+            if (linkedPortal) {
+                for (let difficulty of Object.entries(locations[mapName].difficulties)) {
+                    difficulty = difficulty[0];
+                    locations[mapName].difficulties[difficulty].levels = {};
+
+                    // Extracting min and max levels based on the difficulty
+                    if (difficulty === "EASY") {
+                        locations[mapName].difficulties[difficulty].levels.min = linkedPortal.MonoBehaviour._scenePortal._easyLevelRequirement;
+                        locations[mapName].difficulties[difficulty].levels.max = linkedPortal.MonoBehaviour._scenePortal._maxEasyLevel;
+                    } else if (difficulty === "NORMAL") {
+                        locations[mapName].difficulties[difficulty].levels.min = linkedPortal.MonoBehaviour._scenePortal._normalLevelRequirement;
+                        locations[mapName].difficulties[difficulty].levels.max = linkedPortal.MonoBehaviour._scenePortal._maxNormalLevel;
+                    } else if (difficulty === "HARD") {
+                        locations[mapName].difficulties[difficulty].levels.min = linkedPortal.MonoBehaviour._scenePortal._hardLevelRequirement;
+                        locations[mapName].difficulties[difficulty].levels.max = linkedPortal.MonoBehaviour._scenePortal._maxHardLevel;
+                    }
+                }
+            }
         }
     }
 
