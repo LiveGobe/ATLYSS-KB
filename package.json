@@ -1,7 +1,7 @@
 {
   "name": "atlyss-kb",
   "productName": "atlyss-kb",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A knowledge base for the game ATLYSS",
   "main": ".webpack/main",
   "scripts": {
