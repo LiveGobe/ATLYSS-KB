@@ -29,21 +29,22 @@ async function readDirectory(inputFolder) {
     }
 }
 
-function getType(itemName) {
+function getArmorType(itemName) {
     if (itemName.includes("HELM")) return "Helm";
     else if (itemName.includes("CAPE")) return "Cape";
     else if (itemName.includes("CHESTPIECE")) return "Chestpiece";
     else if (itemName.includes("LEGGINGS")) return "Leggings";
     else if (itemName.includes("SHIELD")) return "Shield";
     else if (itemName.includes("RING")) return "Ring";
-    else if (itemName.includes("Katars")) return "Katars";
-    else if (itemName.includes("Ranged")) return "Ranged";
-    else if (itemName.includes("Range Weapon")) return "Ranged";
-    else if (itemName.includes("Heavy Melee")) return "Heavy Melee";
-    else if (itemName.includes("Melee")) return "Melee";
-    else if (itemName.includes("Polearm")) return "Polearm";
-    else if (itemName.includes("Magic Scepter")) return "Scepter";
-    else if (itemName.includes("Magic Bell")) return "Bell";
+
+    // else if (itemName.includes("Katars")) return "Katars";
+    // else if (itemName.includes("Ranged")) return "Ranged";
+    // else if (itemName.includes("Range Weapon")) return "Ranged";
+    // else if (itemName.includes("Heavy Melee")) return "Heavy Melee";
+    // else if (itemName.includes("Melee")) return "Melee";
+    // else if (itemName.includes("Polearm")) return "Polearm";
+    // else if (itemName.includes("Magic Scepter")) return "Scepter";
+    // else if (itemName.includes("Magic Bell")) return "Bell";
 
     return "";
 }
@@ -72,8 +73,15 @@ async function processFile(filePath) {
         classRequirement = asset.data?._className;
     }
 
+    let weaponType = "";
+    if (data.weaponType?.guid) {
+        const asset = await findAssetById(data.weaponType.guid, workerData.projectPath);
+        parentPort.postMessage({ message: asset.message });
+        weaponType = asset.data?._weaponTypeClassTag;
+    }
+
     equipmentItems[data._itemName] = {
-        type: getType(data.m_Name),
+        type: getArmorType(data.m_Name) || weaponType,
         name: data._itemName,
         description: description,
         level: data._equipmentLevel,
@@ -90,7 +98,13 @@ async function processFile(filePath) {
             magicCriticalRate: data._statArray._magicCriticalRate,
             defense: data._statArray._defense,
             magicDefense: data._statArray._magicDefense,
-            evasion: data._statArray._evasion
+            evasion: data._statArray._evasion,
+            fireResist: data._statArray._fireResist,
+            waterResist: data._statArray._waterResist,
+            natureResist: data._statArray._natureResist,
+            earthResist: data._statArray._earthResist,
+            holyResist: data._statArray._holyResist,
+            shadowResist: data._statArray._shadowResist
         },
         enchantment: {
             item: enchantmentItem,

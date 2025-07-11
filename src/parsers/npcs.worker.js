@@ -34,9 +34,12 @@ async function processFile(filePath) {
         parentPort.postMessage({ message: `File ${path.basename(filePath)} isn't an NPC file` });
         return;
     }
-    const npcData = JSON.parse(fs.readFileSync(filePath, "utf-8")).filter(i => i.MonoBehaviour).find(i => i.MonoBehaviour._npcName)?.MonoBehaviour;
+    // Read the prefab JSON as an array of objects
+    const prefabArray = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    // Find the MonoBehaviour object with m_text
+    const npcData = prefabArray.find(obj => obj.MonoBehaviour && obj.MonoBehaviour.m_text)?.MonoBehaviour;
 
-    if (!npcData || !npcData._npcName) {
+    if (!npcData || !npcData.m_text) {
         parentPort.postMessage({ message: `File ${path.basename(filePath)} doesn't contain any MonoBehaviour` });
         return;
     }
@@ -45,24 +48,48 @@ async function processFile(filePath) {
     const shopKeepFile = (await fsPromise.readdir(npcFolder)).find(file => file.startsWith("shopKeep"));
     let shopData;
     if (shopKeepFile) {
-        shopData = JSON.parse(fs.readFileSync(path.join(npcFolder, shopKeepFile), "utf-8"))[0]?.MonoBehaviour;
+        // ShopKeep files may also be arrays of objects now
+        const shopArray = JSON.parse(fs.readFileSync(path.join(npcFolder, shopKeepFile), "utf-8"));
+        shopData = shopArray.find(obj => obj.MonoBehaviour)?.MonoBehaviour;
     }
 
     let questsData = [];
     try {
-        const questFiles = await fsPromise.readdir(path.join(npcFolder, "_quest"));
-        if (questFiles) {
-            for (const file of questFiles) {
-                questsData.push(JSON.parse(fs.readFileSync(path.join(npcFolder, "_quest", file), "utf-8"))[0]?.MonoBehaviour);
+        // Collect quest files from both _quest subdirectory and npcFolder
+        let questFiles = [];
+        const questDir = path.join(npcFolder, "_quest");
+        if (fs.existsSync(questDir)) {
+            const subQuestFiles = await fsPromise.readdir(questDir);
+            questFiles.push(...subQuestFiles.map(f => ({ file: f, dir: questDir })));
+        }
+        const npcFolderFiles = await fsPromise.readdir(npcFolder);
+        for (const file of npcFolderFiles) {
+            if (file.includes("QUEST") && fs.lstatSync(path.join(npcFolder, file)).isFile()) {
+                questFiles.push({ file, dir: npcFolder });
             }
         }
+        for (const { file, dir } of questFiles) {
+            try {
+                const questArray = JSON.parse(fs.readFileSync(path.join(dir, file), "utf-8"));
+                const questMono = Array.isArray(questArray)
+                    ? questArray.find(obj => obj.MonoBehaviour)?.MonoBehaviour
+                    : (questArray.MonoBehaviour ? questArray.MonoBehaviour : null);
+                if (questMono) questsData.push(questMono);
+            } catch (e) {
+                parentPort.postMessage({ message: `Failed to parse quest file: ${file}` });
+            }
+        }
+        if (questsData.length === 0) {
+            parentPort.postMessage({ message: `No quest files were found for ${npcData.m_text.replaceAll("\n", "\\n").replaceAll("</color>", "").replace(/\<color=(\w*)\>/g, "")}` });
+        }
     } catch (e) {
-        parentPort.postMessage({ message: `No quest files were found for ${npcData._npcName.replaceAll("\n", "\\n").replaceAll("</color>", "").replace(/\<color=(\w*)\>/g, "")}` });
+        parentPort.postMessage({ message: `Error while searching for quest files for ${npcData.m_text.replaceAll("\n", "\\n").replaceAll("</color>", "").replace(/\<color=(\w*)\>/g, "")}` });
     }
 
-    const npcName = npcData._npcName.replaceAll("\n", "\\n").replaceAll("</color>", "</span>").replace(/\<color=(\w*)\>/g, `<span style=\\"color: $1;\\">`);
+    const npcName = npcData.m_text.replaceAll("\n", "\\n").replaceAll("</color>", "</span>").replace(/\<color=(\w*)\>/g, `<span style=\\"color: $1;\\">`);
 
-    npcs[npcData._npcName.replaceAll("\n", "\\n").replaceAll("</color>", "").replace(/\<color=(\w*)\>/g, "")] = {
+    npcs[npcData.m_text.replaceAll("\n", "\\n").replaceAll("</color>", "").replace(/\<color=(\w*)\>/g, "")]
+      = {
         name: npcName,
         shop: shopData ? {
             name: shopData._shopName,
@@ -92,7 +119,7 @@ async function processFile(filePath) {
                     parentPort.postMessage({ message: itemData.message });
                     return itemData.data ? {
                         name: itemData.data._itemName,
-                        quantity: itemReward._setItemData?._quantity
+                        quantity: itemReward?._itemQuantity
                     } : null;
                 }
                 return null;
@@ -150,7 +177,7 @@ async function processFile(filePath) {
         }))
     };
 
-    parentPort.postMessage({ message: `Added NPC [${npcData._npcName.replaceAll("\n", "\\n").replaceAll("</color>", "").replace(/\<color=(\w*)\>/g, "")}]` });
+    parentPort.postMessage({ message: `Added NPC [${npcData.m_text.replaceAll("\n", "\\n").replaceAll("</color>", "").replace(/\<color=(\w*)\>/g, "")}]` });
 }
 
 (async () => {

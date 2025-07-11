@@ -81,9 +81,9 @@ async function processFile(filePath) {
 
     for (const drop of data._itemDrops) {
         const dropData = await findAssetById(drop._item.guid, workerData.projectPath);
-        parentPort.postMessage({ message: dropData.message });
+        parentPort.postMessage({ message: dropData?.message || "Failed to find asset." });
 
-        if (!dropData.data) continue;
+        if (!dropData?.data) continue;
 
         luaTable[type][entryName].push(dropData.data._itemName);
         parentPort.postMessage({ message: `Added ${type} drop for ${entryName}: ${dropData.data._itemName}` });

@@ -32,6 +32,7 @@ function getType(itemName) {
     else if (itemName.includes("DYE")) return "Dye";
     else if (itemName.includes("SKILLSCROLL")) return "Skill Scroll";
     else if (itemName.includes("STATUSCONSUMABLE")) return "Status";
+    else if (itemName.includes("FISHROD")) return "Fishing Rod";
     
     return "";
 }
