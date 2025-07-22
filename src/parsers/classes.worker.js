@@ -133,7 +133,8 @@ async function processSkillFolder(skillFolderPath, className) {
                     itemCost: skillData._skillRankParams._baseRequiredItem?.guid ? "x" + skillData._skillRankParams._basedItemCost + " " + (await findAssetById(skillData._skillRankParams._baseRequiredItem.guid, workerData.projectPath)).data._itemName : "",
                     manaCost: skillData._skillRankParams._manaCost,
                     healthCost: skillData._skillRankParams._healthCost,
-                    staminaCost: skillData._skillRankParams._staminaCost
+                    staminaCost: skillData._skillRankParams._staminaCost,
+                    pointCost: skillData._skillRankParams._skillPointCost
                 }
             ]
         });
@@ -189,7 +190,8 @@ async function processClassSkills() {
                         itemCost: params._baseRequiredItem?.guid ? "x" + params._basedItemCost + " " + (await findAssetById(params._baseRequiredItem.guid, workerData.projectPath)).data._itemName : "",
                         manaCost: params._manaCost,
                         healthCost: params._healthCost,
-                        staminaCost: params._staminaCost
+                        staminaCost: params._staminaCost,
+                        pointCost: params._skillPointCost
                     }
                 ]
             };

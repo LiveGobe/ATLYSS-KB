@@ -403,6 +403,7 @@ $.getJSON(`https://raw.githubusercontent.com/${githubAddress}/master/package.jso
                 $("#parse-data-menu").show();
                 $("#upload-data").prop("disabled", false); // Enable upload button
                 $("#clear-cache").prop("disabled", false); // Enable clear cache button
+                $("#parse-data").prop("disabled", false); // Enable parse data button
             } else if (state == "DATA PARSED") {
                 $("#status span").text("IDLE");
                 $("#parse-data").prop("disabled", false);

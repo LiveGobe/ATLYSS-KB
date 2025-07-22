@@ -98,10 +98,21 @@ async function processFile(filePath) {
                     const itemData = await findAssetById(item._scriptItem.guid, workerData.projectPath);
                     if (itemData) {
                         parentPort.postMessage({ message: itemData.message });
+                        let price, priceItem;
+                        // Check for _specialStoreCost override
+                        if (item._specialStoreCost && item._specialStoreCost._scriptItem && item._specialStoreCost._scriptItem.guid) {
+                            // Find the item used as special store cost
+                            const costItemData = await findAssetById(item._specialStoreCost._scriptItem.guid, workerData.projectPath);
+                            price = item._specialStoreCost._scriptItemQuantity;
+                            priceItem = costItemData.data._itemName;
+                        } else {
+                            price = item._useDedicatedItemValue ? item._dedicatedItemValue : itemData.data._vendorCost;
+                            priceItem = null;
+                        }
                         return itemData.data ? {
                             name: itemData.data._itemName,
-                            stock: item._isInfiniteStock ? item._initialStock : 0,
-                            refresh: item._stockRefreshTimer
+                            price: price,
+                            priceItem: priceItem
                         } : null;
                     }
                     return null;
