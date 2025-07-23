@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('api', {
     parseData: (parsers) => ipcRenderer.invoke("parseData", parsers),
     getAvailableUploads: () => ipcRenderer.invoke("getAvailableUploads"),
     uploadData: (parsers) => ipcRenderer.invoke("uploadData", parsers),
+    mergeData: (parsers) => ipcRenderer.invoke("mergeData", parsers),
     clearCache: () => ipcRenderer.invoke("clearCache"),
     getPage: (title) => ipcRenderer.invoke("getPage", title),
     ripAssets: () => ipcRenderer.invoke("ripAssets"),

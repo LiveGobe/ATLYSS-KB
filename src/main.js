@@ -395,14 +395,12 @@ const createWindow = () => {
         };
 
         try {
-          const data = await getArticle(`${upload.pageTitle}/version.json`);
-          const remoteVersionData = data ? JSON.parse(data) : {};
-          if (remoteVersionData.version && compareVersions(remoteVersionData.version, versionName) !== -1) {
-            return { error: "Remote version is newer. Skipping edit." };
-          }
+          // const data = await getArticle(`${upload.pageTitle}/version.json`);
+          // const remoteVersionData = data ? JSON.parse(data) : {};
+          // if (remoteVersionData.version && compareVersions(remoteVersionData.version, versionName) !== -1) {
+          //   return { error: "Remote version is newer. Skipping edit." };
+          // }
           await logIn();
-
-          await editArticle(`${upload.pageTitle}/version.json`, JSON.stringify({ version: versionName }, null, 2), `(Automated Update Using ATLYSS-KB) Bumped module ${upload.parser} to version ${versionName}`);
 
           const articleData = await getArticle(upload.pageTitle);
 
@@ -443,6 +441,108 @@ const createWindow = () => {
 
     return { success: true };
   });
+
+  ipcMain.handle("mergeData", async (_, p) => {
+    const projectPath = getProjectPath();
+    const config = getConfig();
+    const versionName = fs.readFileSync(path.join(projectPath, 'data', 'gameVersion.txt'), 'utf8');
+
+
+    function getProdPageTitle(devPageTitle) {
+      // Remove trailing '/dev' from the pageTitle
+      if (devPageTitle.endsWith('/dev')) {
+        return devPageTitle.slice(0, -4);
+      }
+      return devPageTitle;
+    }
+
+    async function mergeWikiData(upload) {
+      try {
+        const client = new mw({
+          protocol: "https",
+          server: "atlyss.wiki.gg",
+          path: "",
+          username: config.username,
+          password: config.password,
+          debug: app.isPackaged ? false : true
+        });
+
+        const devPageTitle = upload.pageTitle;
+        const prodPageTitle = getProdPageTitle(devPageTitle);
+
+        // Login first
+        await new Promise((resolve, reject) => client.logIn(err => err ? reject(err) : resolve()));
+
+        // Get dev content
+        const devContent = await new Promise((resolve, reject) => {
+          client.getArticle(devPageTitle, (err, data) => {
+            if (err) return reject(err);
+            resolve(data);
+          });
+        });
+
+        if (!devContent) {
+          return { error: "No dev data found to promote." };
+        }
+
+        // Promote to prod
+        await new Promise((resolve, reject) => {
+          client.edit(prodPageTitle, devContent, `(ATLYSS-KB) Promoted dev data to prod for version ${versionName}`,
+            err => {
+              if (err) return reject(err);
+              resolve();
+            });
+        });
+
+        // Optionally, promote version.json as well
+        const devVersionContent = await new Promise((resolve, reject) => {
+          client.getArticle(`${devPageTitle}/version.json`, (err, data) => {
+            if (err) return resolve(null); // ignore if missing
+            resolve(data);
+          });
+        });
+
+        if (devVersionContent) {
+          await new Promise((resolve, reject) => {
+            client.edit(`${prodPageTitle}/version.json`, devVersionContent, `(ATLYSS-KB) Promoted dev version.json to prod`, err => {
+              if (err) return reject(err);
+              resolve();
+            });
+          });
+        }
+
+        // Also promote Lua version module
+        const luaVersionModule = `return {\n\tversion = function() \n\t\treturn \"${versionName.trim()}\"\n\tend\n}`;
+        await new Promise((resolve, reject) => {
+          client.edit(`${prodPageTitle}/version`, luaVersionModule, `(ATLYSS-KB) Promoted dev version module to prod`, err => {
+            if (err) return reject(err);
+            resolve();
+          });
+        });
+
+        return { success: true };
+      } catch (error) {
+        return { error: error.message };
+      }
+    }
+
+    // p is expected to be an array of upload objects (like uploadData)
+    for (const upload of p) {
+      try {
+        const result = await mergeWikiData(upload);
+        if (result.error) {
+          mainWindow.webContents.send("logMessage", `[ERROR] Couldn't promote dev data for ${upload.parser}. Error message: ${result.error}`);
+        } else {
+          mainWindow.webContents.send("logMessage", `Promoted dev data for ${upload.parser} to prod successfully!`);
+        }
+      } catch (error) {
+        mainWindow.webContents.send("logMessage", `[ERROR] Couldn't promote dev data for ${upload.parser}. Error message: ${error.error}`);
+      }
+    }
+
+    return { success: true };
+  });
+
 
   ipcMain.handle("clearCache", async () => {
     const projectPath = getProjectPath();

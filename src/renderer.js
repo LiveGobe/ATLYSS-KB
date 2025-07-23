@@ -334,6 +334,7 @@ $.getJSON(`https://raw.githubusercontent.com/${githubAddress}/master/package.jso
             $(e.target).prop("disabled", true);
             $("#upload-data").prop("disabled", true); // Disable upload button
             $("#clear-cache").prop("disabled", true); // Disable clear cache button
+            $("#merge-data").prop("disabled", true); // Disable merge data button
 
             api.parseData(p);
         });
@@ -357,11 +358,29 @@ $.getJSON(`https://raw.githubusercontent.com/${githubAddress}/master/package.jso
             if (p.length === 0) return alert("Please select at least one data table to upload.");
 
             $(e.target).prop("disabled", true);
+            $("#merge-data").prop("disabled", true); // Disable merge data button
 
             const uploads = p.map(parser => availableUploads.find(u => u.parser === parser));
             await api.uploadData(uploads);
 
             $(e.target).prop("disabled", false);
+            $("#merge-data").prop("disabled", false); // Enable merge data button
+        });
+
+        $("#merge-data").on("click", async (e) => {
+            e.preventDefault();
+            const p = [];
+            $(".upload-select.active").each((i, el) => p.push($(el).data("parser")));
+            if (p.length === 0) return alert("Please select at least one data table to merge.");
+
+            $(e.target).prop("disabled", true);
+            $("#upload-data").prop("disabled", true); // Disable upload button
+
+            const uploads = p.map(parser => availableUploads.find(u => u.parser === parser));
+            await api.mergeData(uploads);
+
+            $(e.target).prop("disabled", false);
+            $("#upload-data").prop("disabled", false); // Enable upload button
         });
 
         $("#clear-logs").on("click", (e) => {
@@ -396,6 +415,7 @@ $.getJSON(`https://raw.githubusercontent.com/${githubAddress}/master/package.jso
                 $("#status span").text("BUSY");
                 $("#upload-data").prop("disabled", true); // Disable upload button
                 $("#clear-cache").prop("disabled", true); // Disable clear cache button
+                $("#merge-data").prop("disabled", true); // Disable merge data button
                 $("#parse-data").prop("disabled", true);
             } else if (state == "RAW DATA PARSED") {
                 $("#status span").text("IDLE");
@@ -409,6 +429,7 @@ $.getJSON(`https://raw.githubusercontent.com/${githubAddress}/master/package.jso
                 $("#parse-data").prop("disabled", false);
                 $("#upload-data").prop("disabled", false); // Enable upload button
                 $("#clear-cache").prop("disabled", false); // Enable clear cache button
+                $("#merge-data").prop("disabled", false); // Enable merge data button
                 // Update available uploads
                 const availableUploads = await api.getAvailableUploads();
                 $(".upload-select").each((i, el) => {

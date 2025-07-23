@@ -2,41 +2,41 @@
     {
         "name": "Trade Items",
         "parser": "tradeItems",
-        "pageTitle": "Module:TradeItems/data"
+        "pageTitle": "Module:TradeItems/data/dev"
     },
     {
         "name": "Consumable Items",
         "parser": "consumableItems",
-        "pageTitle": "Module:ConsumableItems/data"
+        "pageTitle": "Module:ConsumableItems/data/dev"
     },
     {
         "name": "Equipment Items",
         "parser": "equipmentItems",
-        "pageTitle": "Module:EquipmentItems/data"
+        "pageTitle": "Module:EquipmentItems/data/dev"
     },
     {
         "name": "Classes",
         "parser": "classes",
-        "pageTitle": "Module:Classes/data"
+        "pageTitle": "Module:Classes/data/dev"
     },
     {
         "name": "Creeps",
         "parser": "creeps",
-        "pageTitle": "Module:Creeps/data"
+        "pageTitle": "Module:Creeps/data/dev"
     },
     {
         "name": "Drop Tables",
         "parser": "dropTables",
-        "pageTitle": "Module:DropTables/data"
+        "pageTitle": "Module:DropTables/data/dev"
     },
     {
         "name": "NPCs",
         "parser": "npcs",
-        "pageTitle": "Module:NPC/data"
+        "pageTitle": "Module:NPC/data/dev"
     },
     {
         "name": "Locations",
         "parser": "locations",
-        "pageTitle": "Module:Locations/data"
+        "pageTitle": "Module:Locations/data/dev"
     }
 ]
