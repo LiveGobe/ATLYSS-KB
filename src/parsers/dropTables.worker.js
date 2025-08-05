@@ -65,7 +65,7 @@ async function processFile(filePath) {
         .replace("Breakbox", " Pot")
         .replace("Catcombs", "Catacombs")
         .replace("Catacombs", "Sanctum Catacombs")
-        .replace("Crescentkeep", "Crescent Keep")
+        .replace("Crescentkeep", "Crescent Road")
         .replace("Grove", "Crescent Grove")
         .replace("Chest ", "")
         .replace(" Chest", "")
